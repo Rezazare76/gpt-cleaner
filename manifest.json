@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GPT Cleaner",
   "version": "1.0",
-  "description": "Keeps only the last N messages in ChatGPT conversation",
+  "description": "Fix ChatGPT lagging in long conversations by keeping only the last N messages visible for faster performance.",
   "permissions": ["activeTab", "storage", "scripting", "tabs"],
   "background": {
     "service_worker": "background.js"
