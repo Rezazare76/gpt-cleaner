@@ -1,0 +1,110 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  width: 320px;
+  margin: 0;
+  padding: 0;
+  background: #f0f2f5;
+}
+.container {
+  padding: 20px;
+}
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 12px;
+}
+h2 {
+  margin-top: 0;
+  font-size: 18px;
+  color: #34454c;
+}
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #555;
+}
+input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+button {
+  background: #34454c;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.3s;
+}
+button:hover {
+  background: #2b3a45;
+}
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+}
+a {
+  color: #34454c;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+.switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: #555;
+}
+
+.switch {
+  position: relative;
+  width: 42px;
+  height: 22px;
+}
+
+.switch input {
+  display: none;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch input:checked + .slider {
+  background: #34454c;
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(20px);
+}

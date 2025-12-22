@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ChatGPT Cleaner</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h2>ChatGPT Cleaner</h2>
+
+        <label for="count">Number of messages to keep:</label>
+        <input type="number" id="count" min="1" value="5" />
+
+        <div class="switch-row">
+          <span>Auto clean</span>
+          <label class="switch">
+            <input type="checkbox" id="autoClean" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <button id="runBtn">Run</button>
+      </div>
+
+      <div class="footer">
+        Created by
+        <a
+          href="https://www.linkedin.com/in/reza-zare-7327a8218/"
+          target="_blank"
+          >Reza Zare</a
+        >
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

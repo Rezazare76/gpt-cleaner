@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "GPT Cleaner",
+  "version": "1.0",
+  "description": "Keeps only the last N messages in ChatGPT conversation",
+  "permissions": ["activeTab", "storage", "scripting", "tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "GPT Cleaner",
+    "default_icon": {
+      "16": "/assets/icon.png",
+      "32": "/assets/icon.png",
+      "48": "/assets/icon.png",
+      "128": "/assets/icon.png"
+    }
+  },
+  "icons": {
+    "16": "/assets/icon.png",
+    "32": "/assets/icon.png",
+    "48": "/assets/icon.png",
+    "128": "/assets/icon.png"
+  }
+}
