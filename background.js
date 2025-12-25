@@ -12,7 +12,6 @@ function updateExtensionState() {
     const tabId = tabs[0].id;
     const url = tabs[0].url || "";
 
-    // فقط وقتی در ChatGPT هستیم، اکشن فعال شود
     if (url.startsWith("https://chatgpt.com/")) {
       chrome.action.enable(tabId);
     } else {
