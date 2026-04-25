@@ -2,6 +2,7 @@
 let autoCleanEnabled = false;
 let keepCount = 5;
 let observer = null;
+let cleanScheduled = false;
 
 // Load settings from storage
 chrome.storage.local.get(["autoClean", "keepCount"], (data) => {
@@ -9,11 +10,9 @@ chrome.storage.local.get(["autoClean", "keepCount"], (data) => {
   keepCount = data.keepCount ?? 5;
 
   if (autoCleanEnabled) {
-    // Initial clean on page load
-    cleanChatGPT();
-
     // Start observing for new messages
     startObserving();
+    runInitialCleanSoon();
   }
 });
 
@@ -44,8 +43,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     autoCleanEnabled = message.value;
 
     if (autoCleanEnabled) {
-      cleanChatGPT();
       startObserving();
+      runInitialCleanSoon();
     } else {
       stopObserving();
     }
@@ -54,21 +53,44 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Main cleaning function
 function cleanChatGPT() {
-  // Find the div where all children are <article>
-  const parent = Array.from(document.querySelectorAll("div")).find(
-    (div) =>
-      div.children.length &&
-      Array.from(div.children).every(
-        (c) => c.tagName.toLowerCase() === "article"
-      )
-  );
+  const parent = document.querySelector("div.flex.flex-col.text-sm");
 
   if (!parent) return;
 
-  // Remove all children except the last N
-  const children = Array.from(parent.children);
+  // Remove only turn containers (div children) and keep last N.
+  const children = Array.from(parent.children).filter(
+    (child) => child.tagName.toLowerCase() === "div"
+  );
   const toRemove = children.slice(0, Math.max(0, children.length - keepCount));
   toRemove.forEach((child) => child.remove());
+}
+
+function scheduleClean() {
+  if (cleanScheduled) return;
+  cleanScheduled = true;
+
+  requestAnimationFrame(() => {
+    cleanScheduled = false;
+    cleanChatGPT();
+  });
+}
+
+function runInitialCleanSoon() {
+  let attempts = 0;
+  const maxAttempts = 60; // ~1s at 60fps
+
+  const tick = () => {
+    if (!autoCleanEnabled) return;
+    scheduleClean();
+    attempts += 1;
+
+    const hasTurns = document.querySelector("div[data-turn-id-container]");
+    if (!hasTurns && attempts < maxAttempts) {
+      requestAnimationFrame(tick);
+    }
+  };
+
+  requestAnimationFrame(tick);
 }
 
 // Start observing DOM changes
@@ -76,22 +98,29 @@ function startObserving() {
   if (observer) return;
 
   observer = new MutationObserver((mutations) => {
-    let hasNewArticle = false;
+    let hasNewTurnContainer = false;
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === "ARTICLE") {
-          hasNewArticle = true;
+        if (
+          node.nodeType === Node.ELEMENT_NODE &&
+          node.matches &&
+          node.matches("div[data-turn-id-container]")
+        ) {
+          hasNewTurnContainer = true;
         }
         // Also check descendants
-        if (node.querySelector && node.querySelector("article")) {
-          hasNewArticle = true;
+        if (
+          node.querySelector &&
+          node.querySelector("div[data-turn-id-container]")
+        ) {
+          hasNewTurnContainer = true;
         }
       });
     });
 
-    if (hasNewArticle) {
-      // Debounce the cleaning to avoid multiple calls
-      setTimeout(cleanChatGPT, 100);
+    if (hasNewTurnContainer) {
+      // Run on next frame for faster, smoother updates.
+      scheduleClean();
     }
   });
 

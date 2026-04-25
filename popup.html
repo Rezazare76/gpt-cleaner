@@ -8,20 +8,36 @@
   <body>
     <div class="container">
       <div class="card">
-        <h2>ChatGPT Cleaner</h2>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
 
-        <label for="count">Number of messages to keep:</label>
-        <input type="number" id="count" min="1" value="5" />
+        <div class="header">
+          <div class="title-row">
+            <span class="app-pill">AI</span>
+            <h2>GPT Cleaner</h2>
+          </div>
+          <p>Keep your chat lightweight and responsive.</p>
+        </div>
+
+        <div class="field">
+          <label for="count">Messages to keep</label>
+          <input type="number" id="count" min="1" value="5" />
+        </div>
 
         <div class="switch-row">
-          <span>Auto clean</span>
+          <div class="switch-copy">
+            <span class="switch-title">Auto clean</span>
+            <span class="switch-subtitle">Clean new turns automatically</span>
+          </div>
           <label class="switch">
             <input type="checkbox" id="autoClean" />
             <span class="slider"></span>
           </label>
         </div>
 
-        <button id="runBtn">Run</button>
+        <button id="runBtn">Clean Now</button>
+
+        <p class="hint">Tip: Keep Auto clean on for smooth long chats.</p>
       </div>
 
       <div class="footer">

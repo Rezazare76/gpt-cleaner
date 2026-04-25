@@ -1,21 +1,34 @@
-chrome.tabs.onActivated.addListener(updateExtensionState);
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId, (tab) => {
+    if (chrome.runtime.lastError || !tab) return;
+    updateExtensionState(tab.id, tab.url || "");
+  });
+});
+
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete") {
-    updateExtensionState();
+    updateExtensionState(tabId, tab.url || "");
   }
 });
 
-function updateExtensionState() {
-  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    if (!tabs[0]) return;
+chrome.runtime.onInstalled.addListener(syncAllTabs);
+chrome.runtime.onStartup.addListener(syncAllTabs);
 
-    const tabId = tabs[0].id;
-    const url = tabs[0].url || "";
-
-    if (url.startsWith("https://chatgpt.com/")) {
-      chrome.action.enable(tabId);
-    } else {
-      chrome.action.disable(tabId);
-    }
+function syncAllTabs() {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach((tab) => {
+      if (!tab.id) return;
+      updateExtensionState(tab.id, tab.url || "");
+    });
   });
+}
+
+function updateExtensionState(tabId, url) {
+  if (!tabId) return;
+
+  if (url.startsWith("https://chatgpt.com/")) {
+    chrome.action.enable(tabId);
+  } else {
+    chrome.action.disable(tabId);
+  }
 }
