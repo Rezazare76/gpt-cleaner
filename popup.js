@@ -48,7 +48,7 @@ function cleanChatGPT(keepCount) {
 
   // Remove only div children except the last N
   const children = Array.from(parent.children).filter(
-    (child) => child.tagName.toLowerCase() === "div"
+    (child) => child.tagName.toLowerCase() === "section"
   );
   const toRemove = children.slice(0, Math.max(0, children.length - keepCount));
   toRemove.forEach((child) => child.remove());
