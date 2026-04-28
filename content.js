@@ -3,6 +3,7 @@ let autoCleanEnabled = false;
 let keepCount = 5;
 let observer = null;
 let cleanScheduled = false;
+let currentUrl = location.href;
 
 // Load settings from storage
 chrome.storage.local.get(["autoClean", "keepCount"], (data) => {
@@ -57,12 +58,24 @@ function cleanChatGPT() {
 
   if (!parent) return;
 
-  // Remove only turn containers (div children) and keep last N.
+  // Remove only turn containers (section children) and keep last N.
   const children = Array.from(parent.children).filter(
-    (child) => child.tagName.toLowerCase() === "div"
+    (child) => child.tagName.toLowerCase() === "section"
   );
   const toRemove = children.slice(0, Math.max(0, children.length - keepCount));
   toRemove.forEach((child) => child.remove());
+}
+
+function handleRouteChange() {
+  if (!autoCleanEnabled) return;
+  runInitialCleanSoon();
+}
+
+function checkUrlChange() {
+  const nextUrl = location.href;
+  if (nextUrl === currentUrl) return;
+  currentUrl = nextUrl;
+  handleRouteChange();
 }
 
 function scheduleClean() {
@@ -98,6 +111,7 @@ function startObserving() {
   if (observer) return;
 
   observer = new MutationObserver((mutations) => {
+    checkUrlChange();
     let hasNewTurnContainer = false;
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
@@ -137,3 +151,18 @@ function stopObserving() {
     observer = null;
   }
 }
+
+window.addEventListener("popstate", handleRouteChange);
+window.addEventListener("hashchange", handleRouteChange);
+
+const originalPushState = history.pushState;
+history.pushState = function (...args) {
+  originalPushState.apply(this, args);
+  handleRouteChange();
+};
+
+const originalReplaceState = history.replaceState;
+history.replaceState = function (...args) {
+  originalReplaceState.apply(this, args);
+  handleRouteChange();
+};

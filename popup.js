@@ -6,7 +6,9 @@ const autoCleanInput = document.getElementById("autoClean");
 chrome.storage.local.get(["keepCount", "autoClean"], (data) => {
   countInput.value = data.keepCount ?? 5;
   autoCleanInput.checked = data.autoClean ?? false;
-  runInitialClean(data.keepCount ?? 5);
+  if (autoCleanInput.checked) {
+    runInitialClean(data.keepCount ?? 5);
+  }
 });
 
 // Save settings when changed
@@ -18,6 +20,11 @@ countInput.addEventListener("input", () => {
 autoCleanInput.addEventListener("change", async () => {
   const isChecked = autoCleanInput.checked;
   chrome.storage.local.set({ autoClean: isChecked });
+
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id || !tab.url?.startsWith("https://chatgpt.com/")) return;
+
+  await notifyAutoCleanChange(tab.id, isChecked);
 });
 
 // Run button click
@@ -63,4 +70,27 @@ async function runInitialClean(keepCount) {
     func: cleanChatGPT,
     args: [keepCount],
   });
+}
+
+async function notifyAutoCleanChange(tabId, isChecked) {
+  const message = {
+    action: "updateAutoClean",
+    value: isChecked,
+  };
+
+  try {
+    await chrome.tabs.sendMessage(tabId, message);
+  } catch (error) {
+    if (!String(error?.message || "").includes("Receiving end does not exist")) {
+      throw error;
+    }
+
+    // Content script may not be injected yet (e.g. after extension reload).
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ["content.js"],
+    });
+
+    await chrome.tabs.sendMessage(tabId, message);
+  }
 }
