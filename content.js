@@ -4,6 +4,7 @@ let keepCount = 5;
 let observer = null;
 let cleanScheduled = false;
 let currentUrl = location.href;
+let periodicTimer = null;
 
 // Load settings from storage
 chrome.storage.local.get(["autoClean", "keepCount"], (data) => {
@@ -14,6 +15,7 @@ chrome.storage.local.get(["autoClean", "keepCount"], (data) => {
     // Start observing for new messages
     startObserving();
     runInitialCleanSoon();
+    startPeriodicCheck();
   }
 });
 
@@ -23,16 +25,19 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
     if (changes.autoClean) {
       autoCleanEnabled = changes.autoClean.newValue;
       if (autoCleanEnabled) {
-        cleanChatGPT();
+        scheduleClean();
         startObserving();
+        startPeriodicCheck();
+        runInitialCleanSoon();
       } else {
         stopObserving();
+        stopPeriodicCheck();
       }
     }
     if (changes.keepCount) {
       keepCount = changes.keepCount.newValue;
       if (autoCleanEnabled) {
-        cleanChatGPT();
+        scheduleClean();
       }
     }
   }
@@ -40,14 +45,21 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
 
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "pingCleaner") {
+    sendResponse({ ok: true });
+    return;
+  }
+
   if (message.action === "updateAutoClean") {
     autoCleanEnabled = message.value;
 
     if (autoCleanEnabled) {
       startObserving();
+      startPeriodicCheck();
       runInitialCleanSoon();
     } else {
       stopObserving();
+      stopPeriodicCheck();
     }
   }
 });
@@ -90,7 +102,7 @@ function scheduleClean() {
 
 function runInitialCleanSoon() {
   let attempts = 0;
-  const maxAttempts = 60; // ~1s at 60fps
+  const maxAttempts = 360; // ~6s at 60fps
 
   const tick = () => {
     if (!autoCleanEnabled) return;
@@ -106,9 +118,29 @@ function runInitialCleanSoon() {
   requestAnimationFrame(tick);
 }
 
+function startPeriodicCheck() {
+  if (periodicTimer) return;
+
+  periodicTimer = window.setInterval(() => {
+    if (!autoCleanEnabled) return;
+    checkUrlChange();
+    scheduleClean();
+  }, 1500);
+}
+
+function stopPeriodicCheck() {
+  if (!periodicTimer) return;
+  window.clearInterval(periodicTimer);
+  periodicTimer = null;
+}
+
 // Start observing DOM changes
 function startObserving() {
   if (observer) return;
+  if (!document.body) {
+    requestAnimationFrame(startObserving);
+    return;
+  }
 
   observer = new MutationObserver((mutations) => {
     checkUrlChange();
@@ -154,6 +186,18 @@ function stopObserving() {
 
 window.addEventListener("popstate", handleRouteChange);
 window.addEventListener("hashchange", handleRouteChange);
+window.addEventListener("focus", () => {
+  if (autoCleanEnabled) runInitialCleanSoon();
+});
+window.addEventListener("pageshow", () => {
+  if (autoCleanEnabled) runInitialCleanSoon();
+});
+document.addEventListener("visibilitychange", () => {
+  if (!autoCleanEnabled) return;
+  if (document.visibilityState === "visible") {
+    runInitialCleanSoon();
+  }
+});
 
 const originalPushState = history.pushState;
 history.pushState = function (...args) {

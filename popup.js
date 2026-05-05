@@ -1,6 +1,10 @@
 const runBtn = document.getElementById("runBtn");
 const countInput = document.getElementById("count");
 const autoCleanInput = document.getElementById("autoClean");
+const CHATGPT_URL_PATTERNS = [
+  "https://chatgpt.com/",
+  "https://chat.openai.com/",
+];
 
 // Load saved settings from storage
 chrome.storage.local.get(["keepCount", "autoClean"], (data) => {
@@ -22,7 +26,7 @@ autoCleanInput.addEventListener("change", async () => {
   chrome.storage.local.set({ autoClean: isChecked });
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.startsWith("https://chatgpt.com/")) return;
+  if (!tab?.id || !isChatGptUrl(tab.url || "")) return;
 
   await notifyAutoCleanChange(tab.id, isChecked);
 });
@@ -33,7 +37,7 @@ runBtn.addEventListener("click", async () => {
   chrome.storage.local.set({ keepCount });
 
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab.url.startsWith("https://chatgpt.com/")) {
+  if (!isChatGptUrl(tab?.url || "")) {
     alert("Cannot run on this page. Please open ChatGPT page.");
     return;
   }
@@ -63,7 +67,7 @@ function cleanChatGPT(keepCount) {
 
 async function runInitialClean(keepCount) {
   let [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !tab.url?.startsWith("https://chatgpt.com/")) return;
+  if (!tab?.id || !isChatGptUrl(tab.url || "")) return;
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
@@ -93,4 +97,8 @@ async function notifyAutoCleanChange(tabId, isChecked) {
 
     await chrome.tabs.sendMessage(tabId, message);
   }
+}
+
+function isChatGptUrl(url) {
+  return CHATGPT_URL_PATTERNS.some((prefix) => url.startsWith(prefix));
 }
